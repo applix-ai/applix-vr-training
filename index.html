@@ -98,11 +98,13 @@ h2{font-family:'Satoshi',sans-serif;font-weight:700;font-size:clamp(28px,4vw,50p
 #btn-prev{width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;color:#333;font-size:16px;cursor:pointer;user-select:none;border-radius:4px}
 #btn-next{width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#0F4B47;border:1px solid #0F4B47;color:#fff;font-size:16px;cursor:pointer;user-select:none;border-radius:4px}
 .step-selector{display:flex;flex:1;min-width:280px;gap:8px}
-.step-box{flex:1;min-width:0;padding:11px 13px;cursor:pointer;transition:all .25s ease;border-radius:4px}
+.step-box{flex:1;min-width:0;padding:11px 13px;cursor:pointer;transition:all .25s ease;border-radius:4px;position:relative;overflow:hidden}
 .step-n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em}
 .step-label{font-family:'Satoshi',sans-serif;font-weight:600;font-size:12px;line-height:1.2;margin-top:8px}
 .step-tick-wrap{display:flex;align-items:center;justify-content:space-between}
 .step-tick{width:7px;height:7px;border-radius:50%;display:inline-block}
+@keyframes vtProgress{from{width:0}to{width:100%}}
+.step-progress{position:absolute;bottom:0;left:0;height:2px;background:#0F4B47;animation:vtProgress 3s linear forwards;border-radius:0 0 4px 4px}
 /* FOOTER */
 footer{background:#0F4B47;padding:28px 26px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
 .footer-copy{font-family:'Satoshi',sans-serif;font-size:13px;color:rgba(255,255,255,.55)}
@@ -331,6 +333,7 @@ function render(torque) {
       + '<span class="step-tick" style="background:' + tickBg + ';border:' + tickBorder + '"></span>'
       + '</div>'
       + '<div class="step-label" style="color:' + labelColor + '">' + st.nav + '</div>'
+      + (active ? '<div class="step-progress"></div>' : '')
       + '</div>';
   }).join('');
 }
@@ -349,21 +352,33 @@ function runTorque() {
   torqueRaf = requestAnimationFrame(tick);
 }
 
-function goStep(n) {
+var autoTimer = null;
+var autoDelay = 3000;
+
+function startAuto() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(function() {
+    goStep(curStep < STEPS.length ? curStep + 1 : 1);
+  }, autoDelay);
+}
+
+function goStep(n, manual) {
   n = Math.max(1, Math.min(STEPS.length, n));
   curStep = n;
   if (torqueRaf) { cancelAnimationFrame(torqueRaf); torqueRaf = null; }
   render(0);
   if (STEPS[n - 1].hasTorque) { runTorque(); }
+  startAuto();
 }
 
 render(0);
+startAuto();
 
-document.getElementById('btn-prev').addEventListener('click', function() { goStep(curStep - 1); });
-document.getElementById('btn-next').addEventListener('click', function() { goStep(curStep + 1); });
+document.getElementById('btn-prev').addEventListener('click', function() { goStep(curStep - 1, true); });
+document.getElementById('btn-next').addEventListener('click', function() { goStep(curStep + 1, true); });
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'ArrowRight') goStep(curStep + 1);
-  if (e.key === 'ArrowLeft') goStep(curStep - 1);
+  if (e.key === 'ArrowRight') goStep(curStep + 1, true);
+  if (e.key === 'ArrowLeft') goStep(curStep - 1, true);
 });
 
 window.addEventListener('mousemove', function(e) {

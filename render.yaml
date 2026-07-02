@@ -5,6 +5,33 @@ services:
     staticPublishPath: .
     pullRequestPreviewsEnabled: true
     headers:
+      # --- Security headers (applied to every response) ---
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=()"
+      - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=31536000; includeSubDomains"
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+
+      # --- Caching ---
+      # Default: HTML revalidated every request, so content edits go live immediately.
       - path: /*
         name: Cache-Control
-        value: public, max-age=3600
+        value: "no-cache"
+      # Static assets: cached 30 days. NOTE: filenames are not content-hashed,
+      # so to force a refresh either rename the file or purge the Render cache.
+      - path: /assets/*
+        name: Cache-Control
+        value: "public, max-age=2592000"
